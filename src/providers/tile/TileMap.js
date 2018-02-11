@@ -8,8 +8,10 @@ import GUID from './../../utils/GUID';
 class TileMap {
   constructor(options) {
     this.options = options;
-    this.mappaDiv = null;
     this.id = GUID();
+
+    this.canvas = this.mappaDiv = null;
+    this.scriptSrc = this.styleSrc = this.scriptTag = null;
     this.srcLoaded = false;
   }
 
@@ -17,11 +19,13 @@ class TileMap {
     const scriptPromise = new Promise((resolve, reject) => {
       this.scriptTag = document.createElement('script');
       document.body.appendChild(this.scriptTag);
+
       this.scriptTag.id = this.options.provider;
       this.scriptTag.onload = resolve;
       this.scriptTag.onerror = reject;
       this.scriptTag.async = true;
       this.scriptTag.src = this.scriptSrc;
+
       if (this.styleSrc) {
         const styleTag = document.createElement('link');
         document.head.appendChild(styleTag);
@@ -29,54 +33,60 @@ class TileMap {
         styleTag.href = this.styleSrc;
       }
     });
-    scriptPromise.then(() => { this.srcLoaded = true; });
+
+    scriptPromise.then(() => this.srcLoaded = true);
+    return this;
   }
 
   overlay(canvas, callback) {
-    if (canvas.elt !== undefined) {
-      this.canvas = canvas.elt;
-    } else {
-      this.canvas = canvas;
-    }
+    const cnv = this.canvas = canvas.elt || canvas;
+
     this.scriptTag.onload = () => {
-      this.mappaDiv = document.createElement('div');
-      if (this.canvas.parentElement) {
-        this.canvas.parentElement.appendChild(this.mappaDiv);
-      } else {
-        document.body.appendChild(this.mappaDiv);
-      }
-      this.mappaDiv.setAttribute('style', `width:${canvas.width}px;height:${canvas.height}px;`);
-      this.mappaDiv.setAttribute('id', this.id);
+      const md = this.mappaDiv = document.createElement('div');
+
+      if (cnv.parentElement)  cnv.parentElement.appendChild(md);
+      else                    document.body.appendChild(md);
+
+      md.setAttribute('style', `width:${cnv.width}px;height:${cnv.height}px;`);
+      md.setAttribute('id', this.id);
+
       this.createMap();
-      if (typeof callback === 'function') {
-        callback();
-      }
+
+      if (typeof callback === 'function')  callback();
+      return this;
     };
   }
 
+  createMap() {
+    return this;
+  }
+
   latLngToPixel(...args) {
-    let pos;
-    if (typeof args[0] === 'object') {
-      [pos] = args;
-    } else {
-      pos = {
-        lat: Number(args[0]),
-        lng: Number(args[1]),
-      };
-    }
-    return this.fromLatLngToPixel(pos);
+    return this.fromLatLngToPixel(...args);
+  }
+
+  fromLatLngToPixel(...args) {
+    return { x: -100, y: -100 };
   }
 
   pixelToLatLng(...args) {
     return this.fromPointToLatLng(...args);
   }
 
-  zoom() {
-    return Math.floor(this.getZoom());
+  fromPointToLatLng(...args) {
+    return { lat: -100, lng: -100 };
   }
 
-  geoJSON(...args) {
-    return parseGeoJSON(args[0], args[1]);
+  zoom() {
+    return this.getZoom() | 0;
+  }
+
+  getZoom() {
+    return 0;
+  }
+
+  geoJSON(data, type) {
+    return parseGeoJSON(data, type);
   }
 }
 
